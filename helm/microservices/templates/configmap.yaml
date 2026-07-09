@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: {{ include "microservices.namespace" . }}
+  labels:
+    app: api-service
+data:
+  NODE_ENV: {{ .Values.config.nodeEnv | quote }}
+  PORT: {{ .Values.config.port | quote }}
+  PGHOST: {{ .Values.config.dbHost | quote }}
+  PGPORT: {{ .Values.config.dbPort | quote }}
+  PGDATABASE: {{ .Values.config.dbName | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: {{ include "microservices.namespace" . }}
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: {{ .Values.config.dbName | quote }}
+  PGDATA: "/var/lib/postgresql/data/pgdata"

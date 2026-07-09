@@ -1,0 +1,49 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Terraform Variables — Example Values
+# ──────────────────────────────────────────────────────────────────────────────
+# Copy this file to terraform.tfvars and customize the values below.
+#   cp terraform.tfvars.example terraform.tfvars
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── General ────────────────────────────────────────────────────────────────
+
+# AWS region where all resources will be created
+region = "us-east-1"
+
+# Project name — used as a prefix for all resource names and tags
+project_name = "microservices-orchestration"
+
+# Deployment environment (production | staging | dev)
+environment = "production"
+
+# ── Networking ─────────────────────────────────────────────────────────────
+
+# CIDR block for the VPC (must be /16 or larger for subnet calculation)
+vpc_cidr = "10.0.0.0/16"
+
+# ── EKS Cluster ───────────────────────────────────────────────────────────
+
+# Kubernetes version for the EKS control plane
+eks_cluster_version = "1.29"
+
+# EC2 instance type for worker nodes
+eks_node_instance_type = "t3.medium"
+
+# Auto-scaling configuration for the managed node group
+eks_desired_nodes = 2
+eks_min_nodes     = 1
+eks_max_nodes     = 5
+
+# ── RDS PostgreSQL ─────────────────────────────────────────────────────────
+
+# RDS instance class (use db.t3.micro for dev, db.r6g.large+ for production)
+db_instance_class = "db.t3.micro"
+
+# Database name to create on the RDS instance
+db_name = "appdb"
+
+# Master username for PostgreSQL (password is auto-generated and stored in Secrets Manager)
+db_username = "postgres"
+
+# Set to true to skip the final snapshot on destroy (use only for dev environments)
+db_skip_final_snapshot = false
