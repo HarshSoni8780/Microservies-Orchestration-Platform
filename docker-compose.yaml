@@ -32,3 +32,6 @@ services:
 
 volumes:
   postgres_data:
+
+# the "depends_on" service in API checks the health and it wont start
+# till the service in postgres healthcheck -> pd_isready

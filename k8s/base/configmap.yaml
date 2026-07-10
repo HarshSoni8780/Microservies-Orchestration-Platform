@@ -1,3 +1,7 @@
+# configmap is used to de-couple configuration from code
+# it is used to change postgres's user or port directly without rebuilding docker image
+# no of configmaps -> 1) api-config 2) postgres-config
+
 apiVersion: v1
 kind: ConfigMap
 metadata:

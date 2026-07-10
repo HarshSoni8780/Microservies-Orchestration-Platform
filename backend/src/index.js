@@ -1,15 +1,19 @@
+//imports
 const express = require('express');
 const { Pool } = require('pg');
 const helmet = require('helmet');
 const cors = require('cors');
 
+//set up express.js app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
-app.use(cors());
+//middle-ware
+app.use(helmet()); //security-headers (XSS protection)
+app.use(cors()); //cross-origin
 app.use(express.json());
 
+//created postgrs-connection pool of max 20 connections
 const pool = new Pool({
   host: process.env.PGHOST || 'localhost',
   port: parseInt(process.env.PGPORT || '5432', 10),
@@ -21,6 +25,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 });
 
+//4 endpoints
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'api-service', timestamp: new Date().toISOString() });
 });
@@ -43,6 +48,7 @@ app.get('/api/items', async (_req, res) => {
   }
 });
 
+//{$1} -> prevents sql-injection attack
 app.post('/api/items', async (req, res) => {
   const { name } = req.body || {};
   if (!name || typeof name !== 'string') {
@@ -59,6 +65,7 @@ app.post('/api/items', async (req, res) => {
   }
 });
 
+//on start-up auto-create "items" table if not exist 
 async function ensureSchema() {
   const client = await pool.connect();
   try {

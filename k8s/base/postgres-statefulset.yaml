@@ -1,3 +1,9 @@
+# StatefulSet is used for databases
+# database should have stable identity and persistent storage
+# so unlike deployments , statefulset ensures that pods get persistent volume after restart
+
+# clusterIp: none->no load-balancer -> traffic directly heads to pods
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -45,11 +51,15 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+          
+          # k8s restarts whenever postgres is unresponsive
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
             initialDelaySeconds: 30
             periodSeconds: 10
+
+          # k8s only sends traffic when postgres is ready to accept
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
