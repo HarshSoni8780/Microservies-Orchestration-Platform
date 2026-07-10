@@ -27,7 +27,7 @@ const pool = new Pool({
 
 //4 endpoints
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'api-service', timestamp: new Date().toISOString() });
+  res.json({ status: 'healthy', service: 'api-service', timestamp: new Date().toISOString() });
 });
 
 app.get('/health/db', async (_req, res) => {
