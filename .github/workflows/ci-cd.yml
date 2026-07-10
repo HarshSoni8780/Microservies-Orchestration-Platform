@@ -26,12 +26,12 @@ jobs:
           cache-dependency-path: './microservices-orchestration/backend/package.json'
 
       - name: Install dependencies
-        run: npm ci
-        working-directory: ./microservices-orchestration/backend
+        run: npm install
+        working-directory: ./backend
 
       - name: Run Tests
         run: npm test --if-present
-        working-directory: ./microservices-orchestration/backend
+        working-directory: ./backend
 
   # ----------------- STAGE 2: BUILD, SCAN & PUSH -----------------
   build-and-push:
@@ -60,7 +60,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./microservices-orchestration/backend
+          context: ./backend
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
