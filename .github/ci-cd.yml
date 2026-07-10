@@ -1,0 +1,101 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/api-service
+
+jobs:
+  # ----------------- STAGE 1: TEST & LINT -----------------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './microservices-orchestration/backend/package.json'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./microservices-orchestration/backend
+
+      - name: Run Tests
+        run: npm test --if-present
+        working-directory: ./microservices-orchestration/backend
+
+  # ----------------- STAGE 2: BUILD, SCAN & PUSH -----------------
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login to GitHub Container Registry
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build and push the Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./microservices-orchestration/backend
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      # Scan the image for vulnerabilities
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0' # Don't break the build for demo, but reports it
+
+  # ----------------- STAGE 3: DEPLOY (GitOps Update) -----------------
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Update the image tag in the Helm values.yaml
+      - name: Update Helm values
+        run: |
+          sed -i "s|tag:.*|tag: \"${{ github.sha }}\"|g" ./microservices-orchestration/helm/microservices/values.yaml
+          sed -i "s|repository:.*|repository: \"${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\"|g" ./microservices-orchestration/helm/microservices/values.yaml
+
+      # Commit the changes back to git
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add ./microservices-orchestration/helm/microservices/values.yaml
+          git commit -m "chore: update api-service image tag to ${{ github.sha }} [skip ci]"
+          git push
